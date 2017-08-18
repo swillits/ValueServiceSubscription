@@ -32,7 +32,7 @@ class PreviewWindowController: NSWindowController, DrawingServiceSubscriber {
 	}
 	
 	
-	func drawing(_ drawing: Drawing, didChange change: DrawingChanges.Change, continuous: Bool) {
+	func drawing(_ drawing: Drawing, didChange change: DrawingChanges.ChangeKind, continuous: Bool) {
 		guard isWindowLoaded else { return }
 		if !continuous {
 			previewView.drawing = drawing

@@ -10,7 +10,7 @@ import Cocoa
 
 
 protocol EditorViewDelegate: class {
-	func editorViewSelectedIndexDidChange()
+	func editorViewSelectedRectDidChange()
 }
 
 
@@ -26,9 +26,9 @@ class EditorView: NSView, DrawingServiceSubscriber {
 	}
 	
 	
-	func drawing(_ drawing: Drawing, didChange change: DrawingChanges.Change, continuous: Bool) {
-		if selectedIndex > drawing.rectangles.count {
-			selectedIndex = -1
+	func drawing(_ drawing: Drawing, didChange change: DrawingChanges.ChangeKind, continuous: Bool) {
+		if let id = selectedRectID, drawing.rectangles[id] == nil {
+			selectedRectID = nil
 		}
 		needsDisplay = true
 	}
@@ -48,24 +48,25 @@ class EditorView: NSView, DrawingServiceSubscriber {
 		
 		let point = convert(event.locationInWindow, from: nil)
 		
-		for (index, rect) in drawing.rectangles.reversed().enumerated() {
+		
+		for rect in drawing.rectanglesInOrder.reversed() {
 			if rect.bounds.contains(point) {
-				selectedIndex = drawing.rectangles.count - 1 - index
+				selectedRectID = rect.id
 				return
 			}  
 		}
 		
-		selectedIndex = -1
+		selectedRectID = nil
 	}
 	
 	
 	
 	
-	var selectedIndex: Int = -1 {
+	var selectedRectID: UUID? = nil {
 		didSet {
-			if oldValue != selectedIndex {
+			if oldValue != selectedRectID {
 				needsDisplay = true
-				delegate?.editorViewSelectedIndexDidChange()
+				delegate?.editorViewSelectedRectDidChange()
 			}
 		}
 	}
@@ -81,14 +82,14 @@ class EditorView: NSView, DrawingServiceSubscriber {
 			return
 		}
 		
-		for (index, rect) in drawing.rectangles.enumerated() {
+		for rect in drawing.rectanglesInOrder {
 			let bounds = NSRect(x: CGFloat(rect.x), y: CGFloat(rect.y), width: CGFloat(rect.w), height: CGFloat(rect.h))
 			
 			let path = NSBezierPath(rect: bounds)
 			rect.color.set()
 			path.fill()
 			
-			if index == selectedIndex {
+			if let id = selectedRectID, rect.id == id {
 				NSColor.black.set()
 				path.lineWidth = 2
 				path.stroke()

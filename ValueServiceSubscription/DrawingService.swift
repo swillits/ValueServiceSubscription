@@ -115,7 +115,7 @@ class DrawingService {
 		
 		for subscription in subscriptions {
 			if let subscriber = subscription.subscriber {
-				subscriber.drawing(drawing, didChange: change, continuous: continuous)
+				subscriber.drawing(drawing, didChange: change.change, continuous: continuous)
 			}
 		}
 	}
@@ -128,7 +128,7 @@ class DrawingService {
 protocol DrawingServiceSubscriber: class {
 	var drawingService: DrawingService? { get set }
 	func drawingServiceDidChange()
-	func drawing(_ drawing: Drawing, didChange change: DrawingChanges.Change, continuous: Bool)
+	func drawing(_ drawing: Drawing, didChange change: DrawingChanges.ChangeKind, continuous: Bool)
 	
 	var _drawingSubscription: Any? { get set }
 	var _drawingService: DrawingService? { get set }

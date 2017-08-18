@@ -26,7 +26,7 @@ class PreviewView: NSView {
 			return
 		}
 		
-		for rect in drawing.rectangles {
+		for rect in drawing.rectanglesInOrder {
 			let bounds = NSRect(x: CGFloat(rect.x), y: CGFloat(rect.y), width: CGFloat(rect.w), height: CGFloat(rect.h))
 			let path = NSBezierPath(rect: bounds)
 			rect.color.set()

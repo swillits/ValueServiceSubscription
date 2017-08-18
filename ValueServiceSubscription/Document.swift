@@ -14,7 +14,8 @@ class Document: NSDocument {
 	
 	
 	override init() {
-		let drawing = Drawing(rectangles: [Rectangle(x: 20, y: 30, w: 100, h: 100, color: NSColor.magenta)])
+		let rect = Rectangle(id: UUID(), x: 20, y: 30, w: 100, h: 100, color: NSColor.magenta)
+		let drawing = Drawing(rectangles: [rect.id: rect], rectangleOrder: [rect.id])
 		drawingService = DrawingService(drawing: drawing)
 		
 		super.init()

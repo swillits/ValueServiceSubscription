@@ -12,7 +12,6 @@ import Cocoa
 
 class EditorWindowController: NSWindowController, DrawingServiceSubscriber, EditorViewDelegate {
 	
-	
 	@IBOutlet weak var editorView: EditorView!
 	
 	@IBOutlet weak var xField: NSTextField!
@@ -54,7 +53,7 @@ class EditorWindowController: NSWindowController, DrawingServiceSubscriber, Edit
 	}
 	
 	
-	func drawing(_ drawing: Drawing, didChange change: DrawingChanges.Change, continuous: Bool) {
+	func drawing(_ drawing: Drawing, didChange change: DrawingChanges.ChangeKind, continuous: Bool) {
 		guard isWindowLoaded else { return }
 		
 		// Inspect the change to see if it affects us before updating
@@ -62,14 +61,18 @@ class EditorWindowController: NSWindowController, DrawingServiceSubscriber, Edit
 	}
 	
 	
-	func editorViewSelectedIndexDidChange() {
+	func editorViewSelectedRectDidChange() {
 		updateUIForSelectedRect()
 	}
 	
 	
 	
 	func updateUIForSelectedRect() {
-		guard let drawingService = drawingService, editorView.selectedIndex != -1 else {
+		guard
+			let drawingService = drawingService,
+			let selectedRectID = editorView.selectedRectID,
+			let rect = drawingService.drawing.rectangles[selectedRectID]
+		else {
 			xField.isEnabled = false
 			yField.isEnabled = false
 			wField.isEnabled = false
@@ -90,8 +93,6 @@ class EditorWindowController: NSWindowController, DrawingServiceSubscriber, Edit
 			return
 		}
 		
-		
-		let rect = drawingService.drawing.rectangles[editorView.selectedIndex]
 		
 		xField.isEnabled = true
 		yField.isEnabled = true
@@ -116,12 +117,12 @@ class EditorWindowController: NSWindowController, DrawingServiceSubscriber, Edit
 	
 	@IBAction func addNewRect(_ sender: Any?) {
 		let color = NSColor(srgbRed: CGFloat(Double.random()), green: CGFloat(Double.random()), blue: CGFloat(Double.random()), alpha: 1.0)
-		let rect = Rectangle(x: Int(Double.random() * 400), y: Int(Double.random() * 300), w: 100, h: 100, color: color)
+		let rect = Rectangle(id: UUID(), x: Int(Double.random() * 400), y: Int(Double.random() * 300), w: 100, h: 100, color: color)
 		let index = drawingService!.drawing.rectangles.count
 		
 		let change = DrawingChanges.Change(
 			change: .insert(DrawingChanges.ChangeInsert(index: index, rect: rect)),
-		    undoChange: .remove(DrawingChanges.ChangeRemove(index: index)),
+		    undoChange: .remove(DrawingChanges.ChangeRemove(rectID: rect.id)),
 		    changeName: nil,
 		    undoChangeName: nil
 		)
@@ -144,10 +145,10 @@ class EditorWindowController: NSWindowController, DrawingServiceSubscriber, Edit
 		}
 		
 		if control == xField || control == yField || control == xSlider || control == ySlider {
-			let index = editorView.selectedIndex
-			let rect = (drawingBeforeContinuousChanges ?? drawingService.drawing).rectangles[index]
-			let undoChangeInfo = DrawingChanges.ChangePosition(index: index, x: rect.x, y: rect.y) 
-			var changeInfo = DrawingChanges.ChangePosition(index: index, x: rect.x, y: rect.y)
+			let id = editorView.selectedRectID!
+			let rect = (drawingBeforeContinuousChanges ?? drawingService.drawing).rectangles[id]!
+			let undoChangeInfo = DrawingChanges.ChangePosition(rectID: id, x: rect.x, y: rect.y) 
+			var changeInfo = DrawingChanges.ChangePosition(rectID: id, x: rect.x, y: rect.y)
 			
 			if control == xField || control == xSlider {
 				changeInfo.x = control.integerValue
@@ -161,10 +162,6 @@ class EditorWindowController: NSWindowController, DrawingServiceSubscriber, Edit
 				changeName: nil,
 				undoChangeName: nil
 			)
-			
-			if !continuous {
-				print("Non continuous")
-			}
 			
 			drawingService.applyChange(change, continuous: continuous)
 		}

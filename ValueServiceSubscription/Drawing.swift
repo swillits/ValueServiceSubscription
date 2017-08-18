@@ -10,18 +10,24 @@ import Cocoa
 
 
 struct Drawing {
-	var rectangles: [Rectangle]
+	var rectangles: [UUID: Rectangle]
+	var rectangleOrder: [UUID]
+	
+	// Should be an enumerated sequence for performance
+	var rectanglesInOrder: [Rectangle] {
+		return rectangleOrder.map { rectangles[$0]! }
+	}
 }
 
 
 
 struct Rectangle {
+	var id: UUID
 	var x: Int
 	var y: Int
 	var w: Int
 	var h: Int
 	var color: NSColor
-	
 	
 	var bounds: CGRect {
 		return CGRect(x: CGFloat(x), y: CGFloat(y), width: CGFloat(w), height: CGFloat(h))
@@ -86,26 +92,26 @@ struct DrawingChanges {
 	
 	
 	struct ChangeRemove {
-		var index: Int
+		var rectID: UUID
 	}
 	
 	
 	struct ChangePosition {
-		var index: Int
+		var rectID: UUID
 		var x: Int
 		var y: Int
 	}
 	
 	
 	struct ChangeSize {
-		var index: Int
+		var rectID: UUID
 		var w: Int
 		var h: Int
 	}
 	
 	
 	struct ChangeColor {
-		var index: Int
+		var rectID: UUID
 		var color: NSColor
 	}
 	
@@ -125,37 +131,45 @@ struct DrawingChanges {
 	
 	static func apply_insert(drawing: Drawing, change: ChangeInsert) -> Drawing {
 		var newDrawing = drawing
-		newDrawing.rectangles.insert(change.rect, at: change.index)
+		newDrawing.rectangles[change.rect.id] = change.rect
+		newDrawing.rectangleOrder.insert(change.rect.id, at: change.index)
 		return newDrawing
 	}
 	
 	
 	static func apply_remove(drawing: Drawing, change: ChangeRemove) -> Drawing {
 		var newDrawing = drawing
-		newDrawing.rectangles.remove(at: change.index)
+		newDrawing.rectangles[change.rectID] = nil
+		newDrawing.rectangleOrder.remove(at: newDrawing.rectangleOrder.index(of: change.rectID)!)
 		return newDrawing
 	}
 	
 	
 	static func apply_position(drawing: Drawing, change: ChangePosition) -> Drawing {
 		var newDrawing = drawing
-		newDrawing.rectangles[change.index].x = change.x
-		newDrawing.rectangles[change.index].y = change.y
+		var rect = newDrawing.rectangles[change.rectID]! 
+		rect.x = change.x
+		rect.y = change.y
+		newDrawing.rectangles[change.rectID] = rect
 		return newDrawing
 	}
 	
 	
 	static func apply_size(drawing: Drawing, change: ChangeSize) -> Drawing {
 		var newDrawing = drawing
-		newDrawing.rectangles[change.index].w = change.w
-		newDrawing.rectangles[change.index].h = change.h
+		var rect = newDrawing.rectangles[change.rectID]! 
+		rect.w = change.h
+		rect.h = change.h
+		newDrawing.rectangles[change.rectID] = rect
 		return newDrawing
 	}
 	
 	
 	static func apply_color(drawing: Drawing, change: ChangeColor) -> Drawing {
 		var newDrawing = drawing
-		newDrawing.rectangles[change.index].color = change.color
+		var rect = newDrawing.rectangles[change.rectID]!
+		rect.color = change.color
+		newDrawing.rectangles[change.rectID] = rect
 		return newDrawing
 	}
 	
