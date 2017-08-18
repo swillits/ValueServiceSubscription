@@ -55,9 +55,9 @@ class EditorWindowController: NSWindowController, DrawingServiceSubscriber, Edit
 	
 	func drawing(_ drawing: Drawing, didChange change: DrawingChanges.ChangeKind, continuous: Bool) {
 		guard isWindowLoaded else { return }
-		
-		// Inspect the change to see if it affects us before updating
-		updateUIForSelectedRect()
+		if let selectedRectID = editorView.selectedRectID, change.affectsAppearanceOfRectangle(id: selectedRectID) {
+			updateUIForSelectedRect()
+		}
 	}
 	
 	

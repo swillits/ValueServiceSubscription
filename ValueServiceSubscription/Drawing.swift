@@ -66,12 +66,28 @@ struct DrawingChanges {
 
 	
 	
+	struct ChangeCategory: OptionSet {
+		let rawValue: Int
+		
+		static let rectangles           = ChangeCategory(rawValue: 1 << 0)
+		static let rectangleAppearance  = ChangeCategory(rawValue: 1 << 1)
+	}
+	
+	
+	
 	enum ChangeKind {
 		case insert(ChangeInsert)
 		case remove(ChangeRemove)
 		case position(ChangePosition)
 		case size(ChangeSize)
 		case color(ChangeColor)
+		
+		var category: ChangeCategory {
+			switch self {
+			case .insert, .remove: return [.rectangles]
+			case .position, .size, .color: return [.rectangleAppearance]
+			}
+		}
 		
 		var localizableName: String {
 			switch self {
@@ -82,6 +98,31 @@ struct DrawingChanges {
 			case .color:    return "Color"
 			}
 		}
+		
+		
+		// Convenience accessors for common properties of changes
+		// -----------------------------------------------------------
+		var rectID: UUID? {
+			switch self {
+			case .insert(let info):   return info.rect.id
+			case .remove(let info):   return info.rectID
+			case .position(let info): return info.rectID
+			case .size(let info):     return info.rectID
+			case .color(let info):    return info.rectID
+			} 
+		}
+		
+		
+		
+		// Convenience for determining change relevancy
+		// -----------------------------------------------------------
+		func affectsAppearanceOfRectangle(id: UUID) -> Bool {
+			if category.contains(.rectangleAppearance) {
+				return rectID! == id
+			}
+			return false
+		}
+		
 	}
 	
 	
